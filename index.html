@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Population Map of Denmark - 2025</title>
+    <base href="/">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
+    <script src="./js/population-map.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            position: relative;
+        }
+        header {
+            background-color: transparent;
+            color: #333;
+            padding: 1rem 0;
+            margin-bottom: 0;
+            position: relative;
+            z-index: 999;
+        }
+        header h1 {
+            margin: 0;
+            padding: 0 20px;
+            font-size: 1.8rem;
+        }
+        .map-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 80px); /* Leave space for footer */
+            background: white;
+        }
+        
+        .map-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            background: transparent;
+            padding: 15px 20px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #legend-scale {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        #population-map {
+            width: 100%;
+            height: 100%;
+        }
+        .map-title {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+        .legend {
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .legend-scale {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+        }
+        .legend-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 0.8em;
+            color: #666;
+        }
+        .back-button {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            background-color: #1a5fb4;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        .back-button:hover {
+            background-color: #0c4d9c;
+        }
+        .back-button i {
+            margin-right: 5px;
+        }
+        /* Sidebar styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 300px;
+            height: 100vh;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px 0;
+            transition: left 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .sidebar.show {
+            left: 0;
+        }
+        
+        .sidebar-content {
+            padding: 0 20px;
+        }
+        
+        .sidebar h3 {
+            color: #ecf0f1;
+            margin: 0 0 20px 0;
+            padding: 0 0 10px 0;
+            border-bottom: 1px solid #3e5166;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group h4 {
+            color: #bdc3c7;
+            margin: 0 0 10px 0;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .form-select:focus {
+            border-color: #4a90e2;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+        }
+        
+        .radio-container {
+            display: flex;
+            align-items: center;
+            position: relative;
+            padding-left: 30px;
+            cursor: pointer;
+            color: #ecf0f1;
+            font-size: 0.9rem;
+        }
+        
+        .radio-container input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        .checkmark {
+            position: absolute;
+            left: 0;
+            height: 18px;
+            width: 18px;
+            background-color: #34495e;
+            border-radius: 50%;
+            border: 2px solid #7f8c8d;
+        }
+        
+        .radio-container:hover input ~ .checkmark {
+            background-color: #3e5166;
+        }
+        
+        .radio-container input:checked ~ .checkmark {
+            background-color: #3498db;
+            border-color: #3498db;
+        }
+        
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+        }
+        
+        .radio-container input:checked ~ .checkmark:after {
+            display: block;
+        }
+        
+        .radio-container .checkmark:after {
+            top: 4px;
+            left: 4px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: white;
+        }
+        
+        .date-slider-container {
+            margin-bottom: 5px;
+        }
+        
+        .slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        .date-labels {
+            display: flex;
+            justify-content: space-between;
+            color: #bdc3c7;
+            font-size: 0.8rem;
+        }
+        
+        .navigation-links {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #3e5166;
+        }
+        
+        .nav-link {
+            display: flex;
+            align-items: center;
+            color: #ecf0f1;
+            text-decoration: none;
+            padding: 8px 0;
+            transition: color 0.2s;
+        }
+        
+        .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .nav-link:hover {
+            color: #3498db;
+        }
+        .menu-toggle {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            background-color: rgba(26, 95, 180, 0.9);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 12px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 1001;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.2s;
+        }
+        
+        .menu-toggle:hover {
+            background-color: #1a5fb4;
+        }
+        .menu-toggle span {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background-color: white;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button id="menu-toggle" class="menu-toggle" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <!-- Sidebar Menu -->
+        <div id="sidebar" class="sidebar">
+            <div class="sidebar-content">
+                <h3>Visualization Controls</h3>
+                
+                <!-- Variable Selector -->
+                <div class="control-group">
+                    <h4>Variable</h4>
+                    <select id="variable-selector" class="form-select">
+                        <option value="population_total">Total Population</option>
+                        <option value="population_male">Male Population</option>
+                        <option value="population_female">Female Population</option>
+                        <option value="births">Births</option>
+                        <option value="deaths">Deaths</option>
+                        <option value="net_migration">Net Migration</option>
+                        <option value="median_age">Median Age</option>
+                        <option value="avg_household_size">Avg. Household Size</option>
+                        <option value="households_total">Total Households</option>
+                        <option value="median_income_dkk">Median Income (DKK)</option>
+                        <option value="employment_rate">Employment Rate</option>
+                        <option value="unemployment_rate">Unemployment Rate</option>
+                    </select>
+                </div>
+
+                <!-- Region Type Selector -->
+                <div class="control-group">
+                    <h4>Region Type</h4>
+                    <div class="radio-group">
+                        <label class="radio-container">
+                            <input type="radio" name="region-type" value="region">
+                            <span class="checkmark"></span>
+                            Region
+                        </label>
+                        <label class="radio-container">
+                            <input type="radio" name="region-type" value="municipality" checked>
+                            <span class="checkmark"></span>
+                            Municipality
+                        </label>
+
+                    </div>
+                </div>
+
+                <!-- Date Selector -->
+                <div class="control-group">
+                    <h4>Date</h4>
+                    <div class="date-slider-container">
+                        <input type="range" id="date-slider" min="0" max="2" value="2" step="1" class="slider">
+                        <div class="date-labels">
+                            <span>Jan 2024</span>
+                            <span>Jul 2024</span>
+                            <span>Jan 2025</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Navigation Links -->
+                <div class="control-group navigation-links">
+                    <h4>Navigation</h4>
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-home"></i> Back to Main Map
+                    </a>
+                    <a href="data-table.html" class="nav-link">
+                        <i class="fas fa-table"></i> View Data Table
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="map-container">
+            <div id="population-map"></div>
+        </div>
+        
+        <!-- Footer with legend -->
+        <footer class="map-footer">
+            <div id="legend-scale"></div>
+        </footer>
+    </div>
+
+    <script>
+        // Toggle sidebar menu
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.getElementById('sidebar');
+            const body = document.body;
+            
+            // Toggle sidebar when menu button is clicked
+            menuToggle.addEventListener('click', function(event) {
+                event.stopPropagation();
+                sidebar.classList.toggle('show');
+                menuToggle.classList.toggle('active');
+                body.classList.toggle('sidebar-open');
+            });
+            
+            // Close sidebar when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!sidebar.contains(event.target) && event.target !== menuToggle) {
+                    sidebar.classList.remove('show');
+                    menuToggle.classList.remove('active');
+                    body.classList.remove('sidebar-open');
+                }
+            });
+            
+            // Close sidebar when a navigation link is clicked (for mobile)
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', function() {
+                    sidebar.classList.remove('show');
+                    menuToggle.classList.remove('active');
+                    body.classList.remove('sidebar-open');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

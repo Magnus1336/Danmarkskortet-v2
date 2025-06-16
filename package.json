@@ -1,0 +1,17 @@
+{
+  "name": "danmarkskortet",
+  "version": "1.0.0",
+  "description": "Interactive map of Denmark with population data",
+  "main": "js/server.js",
+  "scripts": {
+    "start": "node js/server.js",
+    "dev": "node js/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["denmark", "map", "population", "visualization"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
