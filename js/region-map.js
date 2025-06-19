@@ -3,7 +3,7 @@
  */
 
 // Global variables
-let mapData;
+let mapDataRegions;
 let demographicData = {};
 let currentVariable = 'population_total';
 
@@ -30,7 +30,7 @@ async function initMap() {
     try {
         // Load the map data
         const regions = await d3.json('data/regionsinddeling_formatted_noz.geojson');
-        mapData = regions;
+        mapDataRegions = regions;
         
         // Create the map
         createMap();
@@ -79,7 +79,7 @@ function createMap() {
     const path = d3.geoPath().projection(projection);
     
     // Calculate the bounding box of the features in the current projection
-    const [[x0, y0], [x1, y1]] = d3.geoBounds(mapData);
+    const [[x0, y0], [x1, y1]] = d3.geoBounds(mapDataRegions);
     const bounds = { x0, y0, x1, y1 };
     
     // Calculate the scale to fit the map in the viewport
@@ -92,14 +92,14 @@ function createMap() {
     projection.scale(scale * 5000);
     
     // Log the features to check if Nordjylland is in the data
-    console.log('Map features:', mapData.features.map(f => ({
+    console.log('Map features:', mapDataRegions.features.map(f => ({
         name: f.properties.name || 'Unnamed',
         type: f.geometry.type
     })));
 
     // Add the map features
     const regions = g.selectAll('.region')
-        .data(mapData.features)
+        .data(mapDataRegions.features)
         .enter()
         .append('path')
         .attr('class', 'region')
@@ -124,7 +124,7 @@ function createMap() {
 
     // Add region labels
     g.selectAll('.region-label')
-        .data(mapData.features)
+        .data(mapDataRegions.features)
         .enter()
         .append('text')
         .attr('class', 'region-label')
