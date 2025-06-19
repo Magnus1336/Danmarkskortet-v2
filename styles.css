@@ -1,3 +1,29 @@
+/* Region Map Styles */
+.region {
+    stroke: #000;
+    stroke-width: 1px;
+    stroke-linejoin: round;
+    fill-opacity: 0.8;
+    transition: stroke-width 0.2s, fill-opacity 0.2s;
+}
+
+.region:hover {
+    stroke-width: 3px;
+    stroke: #000;
+    fill-opacity: 1;
+}
+
+.region-label {
+    font-family: Arial, sans-serif;
+    text-shadow: 
+        -1px -1px 0 #fff,
+        1px -1px 0 #fff,
+        -1px 1px 0 #fff,
+        1px 1px 0 #fff;
+    pointer-events: none;
+    user-select: none;
+}
+
 /* Base styles */
 :root {
     --primary-color: #1a5fb4;

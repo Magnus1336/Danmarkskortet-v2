@@ -35,6 +35,8 @@ async function initMap() {
         // Load the map data and demographic data in parallel
         const [municipalities, demographics] = await Promise.all([
             d3.json('https://raw.githubusercontent.com/codeforgermany/click_that_hood/main/public/data/denmark-municipalities.geojson'),
+            // Correct API call to Dataforsyningen but doesnt work using above instead
+            //d3.json('https://api.dataforsyningen.dk/kommuner?format=geojson'),
             fetchDemographicData()
         ]);
         
