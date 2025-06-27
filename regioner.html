@@ -4,182 +4,512 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Danmarkskortet - Regioner</title>
+    <base href="/">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
+    <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+    <script src="./js/region-map.js"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        body, html {
             margin: 0;
             padding: 0;
-            background-color: #f5f5f5;
-            color: #333;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .map-container {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 20px;
-            margin-bottom: 30px;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
             position: relative;
         }
+        header {
+            background-color: transparent;
+            color: #333;
+            padding: 1rem 0;
+            margin-bottom: 0;
+            position: relative;
+            z-index: 999;
+        }
+        header h1 {
+            margin: 0;
+            padding: 0 20px;
+            font-size: 1.8rem;
+        }
+        .map-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 80px);
+            background: white;
+            padding: 0;
+            margin: 0;
+            border-radius: 0;
+            box-shadow: none;
+        }
+        
+        .map-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            background: transparent;
+            padding: 15px 20px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #legend-scale {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
         #region-map {
             width: 100%;
-            height: 600px;
+            height: 100%;
+            border: none;
+            border-radius: 0;
+            background-color: white;
+        }
+        
+        .map-title {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+        
+        .legend {
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .legend-scale {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+        }
+        
+        .legend-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 0.8em;
+            color: #666;
+        }
+        
+        .back-button {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            background-color: #1a5fb4;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        
+        .back-button:hover {
+            background-color: #0c4d9c;
+        }
+        
+        .back-button i {
+            margin-right: 5px;
+        }
+        
+        /* Sidebar styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 300px;
+            height: 100vh;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px 0;
+            transition: left 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .sidebar.show {
+            left: 0;
+        }
+        
+        .sidebar-content {
+            padding: 0 20px;
+        }
+        
+        .sidebar h3 {
+            color: #ecf0f1;
+            margin: 0 0 20px 0;
+            padding: 0 0 10px 0;
+            border-bottom: 1px solid #3e5166;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group h4 {
+            color: #bdc3c7;
+            margin: 0 0 10px 0;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 8px 12px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            background-color: #f8f9fa;
-        }
-        .controls {
-            margin-bottom: 20px;
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 4px;
-            border: 1px solid #e9ecef;
-        }
-        .control-group {
-            margin-bottom: 0;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-            color: #2c3e50;
-            font-size: 14px;
-        }
-        select {
-            padding: 8px 12px;
-            border-radius: 4px;
-            border: 1px solid #ced4da;
-            font-size: 14px;
-            min-width: 200px;
             background-color: white;
-            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-            margin: 20px auto;
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 10px;
         }
+        
+        .form-select:focus {
+            border-color: #4a90e2;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+        }
+        
+        .radio-container {
+            display: flex;
+            align-items: center;
+            position: relative;
+            padding-left: 30px;
+            cursor: pointer;
+            color: #ecf0f1;
+            font-size: 0.9rem;
+        }
+        
+        .radio-container input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        .checkmark {
+            position: absolute;
+            left: 0;
+            height: 18px;
+            width: 18px;
+            background-color: #3e5166;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        
+        .radio-container:hover input ~ .checkmark {
+            background-color: #4a5d72;
+        }
+        
+        .radio-container input:checked ~ .checkmark {
+            background-color: #4a90e2;
+        }
+        
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+        }
+        
+        .radio-container input:checked ~ .checkmark:after {
+            display: block;
+        }
+        
+        .radio-container .checkmark:after {
+            top: 6px;
+            left: 6px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: white;
+        }
+        
+        /* Menu toggle button */
+        .menu-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 40px;
+            height: 40px;
+            background: #2c3e50;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+        }
+        
+        .menu-toggle span {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: white;
+            margin: 2px 0;
+            transition: all 0.3s;
+        }
+        
+        .menu-toggle.active span:first-child {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+        
+        .menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+        
+        .menu-toggle.active span:last-child {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+        
+        /* Region specific styles */
         .region {
             transition: fill 0.3s ease;
         }
+        
         .region:hover {
             opacity: 0.8;
             cursor: pointer;
         }
-        @media (max-width: 768px) {
-            #region-map {
-                height: 500px;
-            }
-            .controls {
-                flex-direction: column;
-                align-items: center;
-            }
+        
+        #map-tooltip {
+            position: absolute;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 4px;
+            pointer-events: none;
+            font-size: 14px;
+            z-index: 100;
+            display: none;
+        }
+        
+        .details-panel {
+            position: absolute;
+            bottom: 100px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 99;
+            max-width: 300px;
         }
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="container">
-            <a href="index.html" class="logo">Danmarkskortet</a>
-            <ul class="nav-links">
-                <li><a href="index.html">Forside</a></li>
-                <li><a href="regioner.html" class="active">Regioner</a></li>
-                <li><a href="om.html">Om</a></li>
-            </ul>
-        </div>
-    </nav>
+    <div class="container">
+        <button id="menu-toggle" class="menu-toggle" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
 
-    <div class="map-container">
-        <div class="map-header">
-            <h1>Danske Regioner</h1>
-            <p>Interaktivt kort over Danmarks regioner med befolkningsdata og statistikker. Klik på en region for at se detaljer.</p>
-        </div>
-        
-        <div class="controls">
-            <div class="control-group">
-                <label for="data-select">Vælg data:</label>
-                <select id="data-select">
-                    <option value="population">Befolkning</option>
-                    <option value="density">Befolkningstæthed</option>
-                    <option value="area">Areal</option>
-                </select>
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-content">
+                <h3>Indstillinger</h3>
+                
+                <div class="control-group">
+                    <h4>Vælg data</h4>
+                    <select id="data-select" class="form-select">
+                        <option value="population">Befolkning</option>
+                        <option value="density">Befolkningstæthed</option>
+                        <option value="area">Areal</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <h4>Vælg år</h4>
+                    <select id="year-select" class="form-select">
+                        <option value="2025" selected>2025</option>
+                        <option value="2024">2024</option>
+                        <option value="2023">2023</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <h4>Farveskala</h4>
+                    <div class="radio-group">
+                        <label class="radio-container">
+                            <input type="radio" name="color-scheme" value="blues" checked>
+                            <span class="checkmark"></span>
+                            Blåtoner
+                        </label>
+                        <label class="radio-container">
+                            <input type="radio" name="color-scheme" value="greens">
+                            <span class="checkmark"></span>
+                            Grønne toner
+                        </label>
+                        <label class="radio-container">
+                            <input type="radio" name="color-scheme" value="reds">
+                            <span class="checkmark"></span>
+                            Røde toner
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <a href="index.html" class="back-button">
+                        <i class="fas fa-arrow-left"></i> Tilbage til kort
+                    </a>
+                </div>
             </div>
-            <div class="control-group">
-                <label for="year-select">År:</label>
-                <select id="year-select">
-                    <option value="2025" selected>2025</option>
-                    <option value="2024">2024</option>
-                    <option value="2023">2023</option>
-                </select>
+        </aside>
+
+        <!-- Main content -->
+        <main>
+            <header>
+                <h1>Danmarks Regioner</h1>
+            </header>
+            
+            <div class="map-container">
+                <div id="region-map"></div>
+                <div id="map-tooltip"></div>
+                
+                <div id="region-details" class="details-panel" style="display: none;">
+                    <h3 id="region-name"></h3>
+                    <div id="region-stats"></div>
+                </div>
+                
+                <div class="map-footer">
+                    <div id="legend-scale">
+                        <div class="legend">
+                            <div class="legend-title">Befolkning</div>
+                            <div class="legend-scale">
+                                <span style="background: #f7fbff; width: 20%;"></span>
+                                <span style="background: #c6dbef; width: 20%;"></span>
+                                <span style="background: #6baed6; width: 20%;"></span>
+                                <span style="background: #3182bd; width: 20%;"></span>
+                                <span style="background: #084594; width: 20%;"></span>
+                            </div>
+                            <div class="legend-labels">
+                                <span>Lav</span>
+                                <span>Høj</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-        
-        <div id="region-map"></div>
-        <div id="map-tooltip"></div>
-        
-        <div id="region-details" class="details-panel" style="display: none;">
-            <h3 id="region-name"></h3>
-            <div id="region-stats"></div>
-        </div>
+        </main>
     </div>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2025 Danmarkskortet. Alle rettigheder forbeholdes.</p>
-        </div>
-    </footer>
-
-    <!-- Load D3.js -->
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <!-- Load D3 scale chromatic for color schemes -->
-    <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
-    <!-- Load TopoJSON for better performance if needed -->
-    <script src="https://d3js.org/topojson.v3.min.js"></script>
-    <!-- Load our region map script -->
-    <script src="js/region-map.js"></script>
-    
     <script>
         // Initialize the map when the page loads
         document.addEventListener('DOMContentLoaded', function() {
+            // Toggle sidebar menu
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.getElementById('sidebar');
+            
+            menuToggle.addEventListener('click', function() {
+                menuToggle.classList.toggle('active');
+                sidebar.classList.toggle('show');
+            });
+            
+            // Close sidebar when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!sidebar.contains(event.target) && !menuToggle.contains(event.target)) {
+                    menuToggle.classList.remove('active');
+                    sidebar.classList.remove('show');
+                }
+            });
+            
+            // Initialize the map with full viewport dimensions
+            const mapContainer = document.querySelector('.map-container');
+            const width = window.innerWidth;
+            const height = window.innerHeight - 80; // Account for header and footer
+            
             // Initialize the map with custom options
             RegionMap.init('#region-map', {
-                width: 1000,
-                height: 700,
-                margin: { top: 20, right: 20, bottom: 60, left: 20 },
+                width: width,
+                height: height,
+                margin: { top: 0, right: 0, bottom: 0, left: 0 },
                 colorScheme: d3.interpolateBlues
             });
             
             // Add event listeners for controls
             const dataSelect = document.getElementById('data-select');
             const yearSelect = document.getElementById('year-select');
+            const colorSchemeRadios = document.getElementsByName('color-scheme');
             
             // Update map when data selection changes
             dataSelect.addEventListener('change', function(e) {
-                currentVariable = e.target.value;
-                if (window.mapElements) {
-                    updateMap();
+                if (window.RegionMap && window.RegionMap.updateData) {
+                    window.RegionMap.updateData({
+                        dataType: e.target.value,
+                        year: yearSelect.value
+                    });
                 }
             });
             
             // Update map when year selection changes
             yearSelect.addEventListener('change', function(e) {
-                currentDate = e.target.value + '-01-01';
-                if (window.mapElements) {
-                    updateMap();
+                if (window.RegionMap && window.RegionMap.updateData) {
+                    window.RegionMap.updateData({
+                        dataType: dataSelect.value,
+                        year: e.target.value
+                    });
                 }
             });
             
-            // Make the map elements globally accessible
-            window.updateMap = updateMap;
+            // Update color scheme when radio selection changes
+            colorSchemeRadios.forEach(radio => {
+                radio.addEventListener('change', function(e) {
+                    if (window.RegionMap && window.RegionMap.updateColorScheme) {
+                        const colorScheme = {
+                            'blues': d3.interpolateBlues,
+                            'greens': d3.interpolateGreens,
+                            'reds': d3.interpolateReds
+                        }[e.target.value];
+                        
+                        window.RegionMap.updateColorScheme(colorScheme);
+                    }
+                });
+            });
+            
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                const newWidth = window.innerWidth;
+                const newHeight = window.innerHeight - 80; // Account for header and footer
+                
+                if (window.RegionMap && window.RegionMap.resize) {
+                    window.RegionMap.resize(newWidth, newHeight);
+                }
+            });
         });
     </script>
 </body>
